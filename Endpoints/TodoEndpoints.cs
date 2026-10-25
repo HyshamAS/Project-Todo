@@ -17,6 +17,7 @@ public static class TodoEndpoints
             TodoDbContext db,
             string? search,
             bool? isCompleted,
+            bool? isOverdue,
             PriorityLevel? priority,
             string? category,
             string? sortBy,
@@ -34,6 +35,12 @@ public static class TodoEndpoints
             if (isCompleted.HasValue)
             {
                 query = query.Where(t => t.IsCompleted == isCompleted.Value);
+            }
+
+            if (isOverdue == true)
+            {
+                var now = DateTime.UtcNow;
+                query = query.Where(t => !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value < now);
             }
 
             if (priority.HasValue)

@@ -131,13 +131,19 @@ function bindEvents() {
         loadTodos();
     });
 
-    // Status Tabs
+    // Status Tabs & Stat Cards Click Handlers
     elements.statusTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            elements.statusTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            state.filters.status = tab.dataset.status;
-            loadTodos();
+            setStatusFilter(tab.dataset.status);
+        });
+    });
+
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const filter = card.dataset.filter;
+            if (filter) {
+                setStatusFilter(filter);
+            }
         });
     });
 
@@ -200,12 +206,36 @@ async function loadCategories() {
     }
 }
 
+function setStatusFilter(status) {
+    state.filters.status = status;
+
+    // Synchronize status tabs UI
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.status === status);
+    });
+
+    // Synchronize stat cards UI
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.filter === status);
+    });
+
+    loadTodos();
+}
+
 async function loadTodos() {
     try {
         const params = new URLSearchParams();
         if (state.filters.search) params.append('search', state.filters.search);
-        if (state.filters.status === 'active') params.append('isCompleted', 'false');
-        if (state.filters.status === 'completed') params.append('isCompleted', 'true');
+        
+        // Handle pending / active filter
+        if (state.filters.status === 'pending' || state.filters.status === 'active') {
+            params.append('isCompleted', 'false');
+        } else if (state.filters.status === 'completed') {
+            params.append('isCompleted', 'true');
+        } else if (state.filters.status === 'overdue') {
+            params.append('isOverdue', 'true');
+        }
+
         if (state.filters.priority !== 'all') params.append('priority', state.filters.priority);
         if (state.filters.category && state.filters.category !== 'All') {
             params.append('category', state.filters.category);
@@ -444,13 +474,30 @@ function renderTodos() {
     elements.tasksCountDisplay.textContent = `Showing ${state.todos.length} task${state.todos.length === 1 ? '' : 's'}`;
 
     if (state.todos.length === 0) {
+        let emptyTitle = 'No tasks found';
+        let emptyDesc = 'Create a new task above to get started!';
+
+        if (state.filters.search) {
+            emptyTitle = 'No matching tasks';
+            emptyDesc = `No tasks match "${escapeHtml(state.filters.search)}".`;
+        } else if (state.filters.status === 'pending' || state.filters.status === 'active') {
+            emptyTitle = 'All caught up! 🎉';
+            emptyDesc = 'You have no pending tasks. Great job!';
+        } else if (state.filters.status === 'completed') {
+            emptyTitle = 'No completed tasks';
+            emptyDesc = 'Completed tasks will appear here once you finish them.';
+        } else if (state.filters.status === 'overdue') {
+            emptyTitle = 'No overdue tasks! ⏰';
+            emptyDesc = 'All of your deadlines are on track.';
+        }
+
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">
                     <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                 </div>
-                <h3>No tasks found</h3>
-                <p>${state.filters.search ? 'No tasks match your search criteria.' : 'Create a new task above to get started!'}</p>
+                <h3>${emptyTitle}</h3>
+                <p>${emptyDesc}</p>
             </div>
         `;
         return;
