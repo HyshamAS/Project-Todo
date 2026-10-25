@@ -247,11 +247,22 @@ body {
     align-items: center;
     gap: 14px;
     box-shadow: var(--shadow-sm);
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    outline: none;
 }
 .stat-card:hover {
     transform: translateY(-2px);
     border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+}
+.stat-card.active {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px var(--brand-glow), var(--shadow-sm);
+    background-color: var(--bg-surface-elevated);
 }
 
 .stat-icon {
